@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="NOVA, tienda online de moda, accesorios y deporte.">
+	<title>NOVA | Moda que se mueve contigo</title>
+	<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+	<script src="firebase-config.js"></script>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+		:root {
+			--ink: #202326;
+			--muted: #707575;
+			--paper: #f5f3ee;
+			--glass: rgba(255, 255, 255, .62);
+			--line: rgba(32, 35, 38, .12);
+			--coral: #f06d5c;
+			--teal: #0c7772;
+			--lime: #d8e879;
+			--shadow: 0 20px 60px rgba(42, 45, 43, .12);
+		}
+
+		* { box-sizing: border-box; }
+		html { scroll-behavior: smooth; }
+		body {
+			margin: 0;
+			color: var(--ink);
+			background: var(--paper);
+			font-family: 'DM Sans', sans-serif;
+			min-width: 320px;
+		}
+		body::before {
+			content: '';
+			position: fixed;
+			inset: 0;
+			z-index: -1;
+			opacity: .5;
+			background: radial-gradient(circle at 9% 18%, rgba(240, 109, 92, .18), transparent 26%), radial-gradient(circle at 92% 62%, rgba(12, 119, 114, .14), transparent 28%);
+			pointer-events: none;
+		}
+		button, input, select { font: inherit; }
+		button { cursor: pointer; }
+		.shell { width: min(1180px, calc(100% - 40px)); margin: auto; }
+
+		header {
+			padding: 22px 0 16px;
+			position: sticky;
+			top: 0;
+			z-index: 10;
+			background: rgba(245, 243, 238, .82);
+			backdrop-filter: blur(18px);
+			border-bottom: 1px solid rgba(32, 35, 38, .07);
+		}
+		.nav { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+		.brand { display: flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+		.brand-mark { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 50%; background: var(--coral); color: white; font-family: 'Space Grotesk'; font-weight: 700; }
+		.brand-name { font: 700 24px 'Space Grotesk'; letter-spacing: 1px; }
+		.nav-links { display: flex; gap: 28px; margin-left: auto; }
+		.nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; }
+		.nav-links a:hover { color: var(--coral); }
+		.cart-button { display: flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; color: var(--ink); background: var(--glass); backdrop-filter: blur(12px); font-weight: 700; }
+		.cart-count { min-width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--teal); color: #fff; font-size: 12px; }
+
+		.hero { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; min-height: 540px; padding: 70px 0 56px; }
+		.eyebrow { color: var(--teal); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+		h1, h2, h3, p { margin-top: 0; }
+		h1 { max-width: 580px; margin: 16px 0 20px; font: 600 clamp(42px, 6vw, 76px)/.98 'Space Grotesk'; letter-spacing: -2px; }
+		h1 em { color: var(--coral); font-style: normal; }
+		.hero-copy { max-width: 470px; color: var(--muted); font-size: 17px; line-height: 1.65; }
+		.hero-actions { display: flex; align-items: center; gap: 22px; margin-top: 30px; }
+		.primary, .secondary { border: 0; border-radius: 12px; padding: 14px 20px; font-weight: 700; transition: transform .2s, box-shadow .2s; }
+		.primary { background: var(--coral); color: white; box-shadow: 0 9px 22px rgba(240, 109, 92, .25); }
+		.primary:hover, .secondary:hover { transform: translateY(-2px); }
+		.secondary { color: var(--ink); background: transparent; border: 1px solid var(--line); }
+		.hero-note { color: var(--muted); font-size: 13px; }
+		.hero-visual { position: relative; min-height: 420px; }
+		.hero-image { width: 78%; height: 420px; object-fit: cover; border-radius: 34px 34px 34px 90px; box-shadow: var(--shadow); filter: saturate(.9); }
+		.float-card { position: absolute; right: 0; bottom: 22px; width: 190px; padding: 16px; border: 1px solid rgba(255,255,255,.7); border-radius: 18px; background: rgba(255,255,255,.68); backdrop-filter: blur(15px); box-shadow: var(--shadow); }
+		.float-card strong { display: block; margin-top: 6px; font: 600 20px 'Space Grotesk'; }
+		.float-card small { color: var(--muted); }
+		.seal { position: absolute; top: 16px; right: 7%; width: 76px; height: 76px; display: grid; place-items: center; border-radius: 50%; background: var(--lime); color: var(--teal); font-size: 11px; font-weight: 700; text-align: center; transform: rotate(10deg); }
+
+		.section-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 30px 0 24px; }
+		h2 { margin-bottom: 0; font: 600 34px 'Space Grotesk'; letter-spacing: -1px; }
+		.section-subtitle { color: var(--muted); margin: 8px 0 0; }
+		.categories { display: flex; gap: 9px; overflow-x: auto; padding-bottom: 5px; }
+		.category { flex: 0 0 auto; padding: 9px 16px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.38); color: var(--muted); font-weight: 600; }
+		.category.active, .category:hover { background: var(--teal); color: white; border-color: var(--teal); }
+		.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 24px 0; }
+		.search { width: min(280px, 100%); padding: 12px 15px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.5); outline: none; }
+		.search:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(12,119,114,.1); }
+		.product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 17px; }
+		.product { overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,.85); border-radius: 18px; background: var(--glass); backdrop-filter: blur(13px); box-shadow: 0 10px 28px rgba(42,45,43,.07); transition: transform .25s, box-shadow .25s; }
+		.product:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+		.product-image { position: relative; aspect-ratio: .86; overflow: hidden; background: #ddd; }
+		.product-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+		.product:hover img { transform: scale(1.05); }
+		.tag { position: absolute; top: 12px; left: 12px; padding: 6px 9px; border-radius: 8px; background: var(--lime); color: var(--teal); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+		.quick-add { position: absolute; right: 11px; bottom: 11px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: white; color: var(--teal); font-size: 22px; box-shadow: 0 4px 12px rgba(0,0,0,.14); }
+		.product-info { padding: 15px; }
+		.product-category { margin-bottom: 7px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+		.product h3 { margin-bottom: 9px; font: 600 17px 'Space Grotesk'; }
+		.product-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+		.price { font-weight: 700; }
+		.old-price { color: var(--muted); font-size: 12px; text-decoration: line-through; margin-left: 4px; }
+		.product-bottom select { padding: 6px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--muted); font-size: 12px; }
+		.empty { grid-column: 1/-1; padding: 50px; text-align: center; color: var(--muted); }
+
+		.service-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 90px 0 75px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--line); }
+		.service { padding: 25px; background: rgba(255,255,255,.42); }
+		.service b { display: block; margin-bottom: 7px; font-family: 'Space Grotesk'; }
+		.service span { color: var(--muted); font-size: 13px; }
+		footer { margin-top: 70px; padding: 30px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+		.footer-line { display: flex; justify-content: space-between; gap: 20px; }
+
+		.overlay { position: fixed; inset: 0; z-index: 20; display: none; background: rgba(32,35,38,.35); backdrop-filter: blur(6px); }
+		.overlay.show { display: block; }
+		.drawer { position: absolute; top: 0; right: 0; width: min(440px, 100%); height: 100%; padding: 25px; overflow-y: auto; background: rgba(250,249,245,.93); box-shadow: -15px 0 40px rgba(0,0,0,.15); animation: slide-in .25s ease-out; }
+		@keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+		.drawer-head, .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 23px; }
+		.drawer h2 { font-size: 28px; }
+		.close { border: 0; background: transparent; color: var(--muted); font-size: 25px; }
+		.cart-item { display: grid; grid-template-columns: 62px 1fr auto; gap: 12px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--line); }
+		.cart-item img { width: 62px; height: 74px; object-fit: cover; border-radius: 9px; }
+		.cart-item strong { display: block; font-size: 14px; }
+		.cart-item small { color: var(--muted); }
+		.qty { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+		.qty button { width: 23px; height: 23px; border: 1px solid var(--line); border-radius: 5px; background: white; }
+		.remove { border: 0; background: none; color: var(--coral); font-size: 12px; }
+		.cart-total { display: flex; justify-content: space-between; margin: 25px 0; font: 700 20px 'Space Grotesk'; }
+		.full { width: 100%; }
+		.cart-empty { padding: 55px 10px; color: var(--muted); text-align: center; }
+
+		.modal-wrap { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; }
+		.modal { width: min(520px, 100%); max-height: 92vh; overflow-y: auto; padding: 28px; border: 1px solid rgba(255,255,255,.9); border-radius: 22px; background: rgba(250,249,245,.95); box-shadow: var(--shadow); animation: pop-in .25s ease-out; }
+		@keyframes pop-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+		.modal h2 { font-size: 27px; }
+		.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+		.field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+		.field.full-field { grid-column: 1/-1; }
+		.field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+		.field input, .field textarea, .field select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: white; }
+		.field textarea { min-height: 74px; resize: vertical; }
+		.field input:focus, .field textarea:focus { border-color: var(--teal); }
+		.notice { padding: 13px; margin: 5px 0 18px; border-radius: 10px; background: rgba(216,232,121,.35); color: var(--teal); font-size: 13px; line-height: 1.45; }
+		.checkout-total { display: flex; justify-content: space-between; margin: 18px 0; font-weight: 700; }
+
+		@media (max-width: 850px) { .hero { grid-template-columns: 1fr; padding-top: 45px; } .hero-visual { min-height: 350px; } .hero-image { height: 350px; } .product-grid { grid-template-columns: repeat(2, 1fr); } }
+		@media (max-width: 560px) { .shell { width: min(100% - 28px, 1180px); } .nav-links { display: none; } .brand-name { font-size: 21px; } h1 { font-size: 47px; } .hero-actions { align-items: flex-start; flex-direction: column; gap: 12px; } .hero-visual { min-height: 290px; } .hero-image { width: 88%; height: 290px; } .float-card { width: 160px; padding: 12px; } .service-strip { grid-template-columns: 1fr; margin: 60px 0 48px; } .service { padding: 19px; } .section-head { align-items: start; flex-direction: column; } .toolbar { align-items: stretch; flex-direction: column; } .search { width: 100%; } .product-grid { gap: 10px; } .product-info { padding: 11px; } .product h3 { font-size: 14px; } .old-price { display: block; margin: 2px 0 0; } .form-grid { grid-template-columns: 1fr; gap: 0; } .field.full-field { grid-column: auto; } .footer-line { flex-direction: column; } }
+	</style>
+</head>
+<body>
+	<header>
+		<div class="shell nav">
+			<a class="brand" href="#inicio" aria-label="NOVA inicio"><span class="brand-mark">N</span><span class="brand-name">Store MrHenryYT</span></a>
+			<nav class="nav-links" aria-label="Navegación principal"><a href="#catalogo">Catálogo</a><a href="#esenciales">Esenciales</a><a href="#footer">Contacto</a></nav>
+			<button class="cart-button" id="cartButton" aria-label="Abrir carrito">Carrito <span class="cart-count" id="cartCount">0</span></button>
+		</div>
+	</header>
+
+	<main id="inicio" class="shell">
+		<section class="hero">
+			<div>
+				<span class="eyebrow">Tienda Store MrHenryYT
+                </span>
+				<h1>Muévete con <em>tu propio ritmo.</em></h1>
+				<p class="hero-copy">Ropa, accesorios y energía para todos tus días. Piezas que combinan contigo, desde el primer café hasta el último entrenamiento.</p>
+				<div class="hero-actions"><a class="primary" href="#catalogo">Explorar colección</a><span class="hero-note">Envíos a todo el país · Compra segura</span></div>
+			</div>
+			<div class="hero-visual"><img class="hero-image" src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=85" alt="Persona con look urbano de NOVA"><div class="seal">HECHO<br>PARA TI</div><div class="float-card"><small>Favorito de la semana</small><strong>Estilos Top</strong><small>Disponible ahora ↗</small></div></div>
+		</section>
+
+		<section id="catalogo">
+			<div class="section-head"><div><span class="eyebrow">Descubre tu siguiente look</span><h2>Lo que se lleva</h2><p class="section-subtitle">Selección curada para tu rutina real.</p></div><div class="categories" id="categories"><button class="category active" data-category="Todos">Todos</button><button class="category" data-category="Ropa">Ropa</button><button class="category" data-category="Accesorios">Accesorios</button><button class="category" data-category="Deporte">Deporte</button></div></div>
+			<div class="toolbar"><span id="resultCount" class="hero-note"></span><input class="search" id="search" type="search" placeholder="Buscar una pieza..." aria-label="Buscar productos"></div>
+			<div class="product-grid" id="productGrid"></div>
+		</section>
+
+		<section id="esenciales" class="service-strip"><div class="service"><b>Envío sin vueltas</b><span>Gratis en pedidos superiores a Q80.</span></div><div class="service"><b>Compra con confianza</b><span>Cambios fáciles hasta 30 días después.</span></div><div class="service"><b>Te atendemos por WhatsApp</b><span>Resolvemos tus dudas antes y después de comprar.</span></div></section>
+	</main>
+	<footer id="footer"><div class="shell footer-line"><span>©Tienda Store MrHenryYT</span><span>Instagram · WhatsApp +502 40331143· Store.store</span></div></footer>
+
+	<div class="overlay" id="cartOverlay" aria-hidden="true"><aside class="drawer" role="dialog" aria-label="Carrito de compras"><div class="drawer-head"><h2>Tu carrito</h2><button class="close" id="closeCart" aria-label="Cerrar carrito">×</button></div><div id="cartItems"></div><div id="cartSummary" hidden><div class="cart-total"><span>Total</span><span id="cartTotal"></span></div><button class="primary full" id="checkoutButton">Continuar al pago por WhatsApp</button></div></aside></div>
+
+	<div class="overlay" id="checkoutOverlay" aria-hidden="true"><div class="modal-wrap"><section class="modal" role="dialog" aria-labelledby="checkoutTitle"><div class="modal-head"><h2 id="checkoutTitle">Completa tu pedido</h2><button class="close" id="closeCheckout" aria-label="Cerrar formulario">×</button></div><div class="notice">Al enviar, se abrirá WhatsApp con tu pedido, tus datos y el total listo para confirmar.</div><form id="checkoutForm"><div class="form-grid"><div class="field"><label for="clientName">Nombre completo *</label><input id="clientName" name="name" required placeholder="Tu nombre"></div><div class="field"><label for="clientPhone">Teléfono *</label><input id="clientPhone" name="phone" required type="tel" placeholder="300 000 0000"></div><div class="field full-field"><label for="clientAddress">Dirección de entrega *</label><input id="clientAddress" name="address" required placeholder="Calle, número, barrio y ciudad"></div><div class="field"><label for="clientPayment">Método de pago</label><select id="clientPayment" name="payment"><option>Transferencia</option><option>Pago contra entrega</option><option>Nequi / Daviplata</option></select></div><div class="field"><label for="clientNote">Nota del pedido</label><input id="clientNote" name="note" placeholder="Talla o indicación especial"></div><div class="field full-field"><label for="clientComment">Comentarios</label><textarea id="clientComment" name="comment" placeholder="¿Algo más que debamos saber?"></textarea></div></div><div class="checkout-total"><span>Total del pedido</span><span id="checkoutTotal"></span></div><button class="primary full" type="submit">Enviar pedido a WhatsApp ↗</button></form></section></div></div>
+
+
+	<script>
+		const WHATSAPP_NUMBER = '573000000000';
+		const defaultProducts = [
+			{ id: 1, name: 'Camiseta Essential', category: 'Ropa', price: 89000, old: 109000, tag: 'Bestseller', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=82' },
+			{ id: 2, name: 'Set Move Light', category: 'Deporte', price: 149000, tag: 'Nuevo', image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=700&q=82' },
+			{ id: 3, name: 'Gorra Daily Club', category: 'Accesorios', price: 69000, image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=700&q=82' },
+			{ id: 4, name: 'Chaqueta Transit', category: 'Ropa', price: 219000, old: 259000, tag: 'Últimas', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=700&q=82' },
+			{ id: 5, name: 'Tenis Run Club', category: 'Deporte', price: 239000, tag: 'Nuevo', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=82' },
+			{ id: 6, name: 'Bolso Crossbody', category: 'Accesorios', price: 119000, image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=700&q=82' },
+			{ id: 7, name: 'Hoodie Slow Sunday', category: 'Ropa', price: 169000, image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=700&q=82' },
+			{ id: 8, name: 'Botella Flow 750ml', category: 'Deporte', price: 59000, image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=700&q=82' }
+		];
+		let products = JSON.parse(localStorage.getItem('nova-products') || 'null') || defaultProducts;
+		let cart = JSON.parse(localStorage.getItem('nova-cart') || '[]').filter(item => products.some(product => product.id === item.id));
+		let activeCategory = 'Todos';
+		let productsUnsubscribe = null;
+		const money = value => new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ', maximumFractionDigits: 2 }).format(value);
+		const productById = id => products.find(product => product.id === id);
+		const imageSource = value => { const image = String(value || '').trim(); if (/^(https?:|data:image\/)/i.test(image) || /\.(png|jpe?g|webp|gif)$/i.test(image)) return image; return `${image}.png`; };
+		function addImageFallbacks(container) { container.querySelectorAll('img[data-image-base]').forEach(image => { const base = image.dataset.imageBase; const root = base.replace(/[.](png|jpe?g|webp|gif)$/i, ''); const extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif']; let attempt = 0; image.addEventListener('error', () => { if (attempt >= extensions.length) return; image.src = `${root}.${extensions[attempt++]}`; }); image.src = imageSource(base); }); }
+
+		function renderProducts() {
+			const query = document.getElementById('search').value.toLowerCase().trim();
+			const visible = products.filter(product => (activeCategory === 'Todos' || product.category === activeCategory) && product.name.toLowerCase().includes(query));
+			document.getElementById('resultCount').textContent = `${visible.length} ${visible.length === 1 ? 'pieza disponible' : 'piezas disponibles'}`;
+			document.getElementById('productGrid').innerHTML = visible.length ? visible.map(product => `<article class="product"><div class="product-image"><img data-image-base="${product.image}" alt="${product.name}" loading="lazy">${product.tag ? `<span class="tag">${product.tag}</span>` : ''}<button class="quick-add" data-add="${product.id}" aria-label="Añadir ${product.name}">+</button></div><div class="product-info"><div class="product-category">${product.category}</div><h3>${product.name}</h3><div class="product-bottom"><div class="price">${money(product.price)}${product.old ? `<span class="old-price">${money(product.old)}</span>` : ''}</div><select aria-label="Talla de ${product.name}" data-size="${product.id}"><option>Única</option><option>S</option><option>M</option><option>L</option><option>XL</option></select></div></div></article>`).join('') : '<div class="empty">No encontramos esa pieza. Prueba con otra búsqueda.</div>';
+			addImageFallbacks(document.getElementById('productGrid'));
+		}
+		function saveCart() { localStorage.setItem('nova-cart', JSON.stringify(cart)); }
+		function subscribeToProducts() {
+			if (!novaDb) return;
+			productsUnsubscribe = novaDb.collection('products').onSnapshot(snapshot => {
+				if (snapshot.empty) return;
+				products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+				cart = cart.filter(item => products.some(product => product.id === item.id));
+				saveCart(); renderProducts(); renderCart();
+			}, error => console.warn('No se pudo sincronizar el catálogo:', error));
+		}
+		function addToCart(id) { const size = document.querySelector(`[data-size="${id}"]`)?.value || 'Única'; const item = cart.find(entry => entry.id === id && entry.size === size); item ? item.qty++ : cart.push({ id, size, qty: 1 }); saveCart(); renderCart(); }
+		function changeQty(index, amount) { cart[index].qty += amount; if (cart[index].qty <= 0) cart.splice(index, 1); saveCart(); renderCart(); }
+		function cartTotal() { return cart.reduce((total, item) => total + productById(item.id).price * item.qty, 0); }
+		function renderCart() {
+			document.getElementById('cartCount').textContent = cart.reduce((total, item) => total + item.qty, 0);
+			const container = document.getElementById('cartItems'); const summary = document.getElementById('cartSummary');
+			if (!cart.length) { container.innerHTML = '<div class="cart-empty">Tu carrito está esperando una buena elección.<br><br><button class="secondary" onclick="closeCart()">Ver catálogo</button></div>'; summary.hidden = true; return; }
+			summary.hidden = false; document.getElementById('cartTotal').textContent = money(cartTotal());
+			container.innerHTML = cart.map((item, index) => { const product = productById(item.id); return `<div class="cart-item"><img src="${product.image}" alt="${product.name}"><div><strong>${product.name}</strong><small>Talla: ${item.size}<br>${money(product.price)}</small><div class="qty"><button data-minus="${index}" aria-label="Reducir cantidad">−</button><span>${item.qty}</span><button data-plus="${index}" aria-label="Aumentar cantidad">+</button></div></div><button class="remove" data-remove="${index}">Eliminar</button></div>`; }).join('');
+		}
+		function openCart() { document.getElementById('cartOverlay').classList.add('show'); document.getElementById('cartOverlay').setAttribute('aria-hidden', 'false'); }
+		function closeCart() { document.getElementById('cartOverlay').classList.remove('show'); document.getElementById('cartOverlay').setAttribute('aria-hidden', 'true'); }
+		function openCheckout() { closeCart(); document.getElementById('checkoutTotal').textContent = money(cartTotal()); document.getElementById('checkoutOverlay').classList.add('show'); }
+		function closeCheckout() { document.getElementById('checkoutOverlay').classList.remove('show'); }
+
+		document.getElementById('productGrid').addEventListener('click', event => { const button = event.target.closest('[data-add]'); if (button) addToCart(Number(button.dataset.add)); });
+		document.getElementById('categories').addEventListener('click', event => { const button = event.target.closest('[data-category]'); if (!button) return; activeCategory = button.dataset.category; document.querySelectorAll('.category').forEach(item => item.classList.toggle('active', item === button)); renderProducts(); });
+		document.getElementById('search').addEventListener('input', renderProducts);
+		document.getElementById('cartItems').addEventListener('click', event => { const plus = event.target.closest('[data-plus]'); const minus = event.target.closest('[data-minus]'); const remove = event.target.closest('[data-remove]'); if (plus) changeQty(Number(plus.dataset.plus), 1); if (minus) changeQty(Number(minus.dataset.minus), -1); if (remove) { cart.splice(Number(remove.dataset.remove), 1); saveCart(); renderCart(); } });
+		document.getElementById('cartButton').addEventListener('click', openCart); document.getElementById('closeCart').addEventListener('click', closeCart); document.getElementById('checkoutButton').addEventListener('click', openCheckout); document.getElementById('closeCheckout').addEventListener('click', closeCheckout);
+		document.getElementById('cartOverlay').addEventListener('click', event => { if (event.target.id === 'cartOverlay') closeCart(); }); document.getElementById('checkoutOverlay').addEventListener('click', event => { if (event.target.id === 'checkoutOverlay') closeCheckout(); });
+		document.getElementById('checkoutForm').addEventListener('submit', event => { event.preventDefault(); if (!cart.length) return; const data = new FormData(event.target); const lines = cart.map(item => { const product = productById(item.id); return `• ${product.name} | Talla: ${item.size} | Cantidad: ${item.qty} | ${money(product.price * item.qty)}`; }).join('\n'); const message = `Hola, quiero hacer este pedido en NOVA:\n\n${lines}\n\nTOTAL: ${money(cartTotal())}\n\nDATOS DEL CLIENTE\nNombre: ${data.get('name')}\nTeléfono: ${data.get('phone')}\nDirección: ${data.get('address')}\nMétodo de pago: ${data.get('payment')}\nNota: ${data.get('note') || 'Sin nota'}\nComentarios: ${data.get('comment') || 'Sin comentarios'}`; window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank'); });
+		window.addEventListener('storage', event => { if (event.key !== 'nova-products') return; products = JSON.parse(event.newValue || '[]'); cart = cart.filter(item => products.some(product => product.id === item.id)); saveCart(); renderProducts(); renderCart(); });
+		renderProducts(); renderCart();
+		subscribeToProducts();
+	</script>
+</body>
+</html>
